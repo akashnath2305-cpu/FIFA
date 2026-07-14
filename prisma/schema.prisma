@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("FAN") // FAN, VIP, STAFF, ORGANIZER
+  tickets   Ticket[]
+  messages  CommunityMessage[]
+  createdAt DateTime @default(now())
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  teamA     String
+  teamB     String
+  startTime DateTime
+  stadium   String
+  tickets   Ticket[]
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  userId    String
+  matchId   String
+  section   String
+  row       String
+  seat      String
+  gate      String
+  user      User     @relation(fields: [userId], references: [id])
+  match     Match    @relation(fields: [matchId], references: [id])
+}
+
+model CommunityMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  language  String   @default("en")
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model FanZone {
+  id          String   @id @default(cuid())
+  name        String
+  latitude    Float
+  longitude   Float
+  density     Int      // 0-100 scale
+  vibeType    String   // e.g., "Family", "Party", "Chants"
+  lastUpdated DateTime @default(now())
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  status      String     @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  steps       TaskStep[]
+}
+
+model TaskStep {
+  id          String   @id @default(cuid())
+  taskId      String
+  description String
+  status      String   @default("PENDING") // PENDING, COMPLETED
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  type        String   // "INFO", "WARNING", "CRITICAL"
+  targetRole  String?  // "FAN", "STAFF", "ORGANIZER", "VIP" (null for broadcast to all)
+  createdAt   DateTime @default(now())
+}
+
+model TransportRoute {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "BUS", "SHUTTLE", "TRAIN", "VIP_CONVOY"
+  startLoc    String
+  endLoc      String
+  status      String   @default("ACTIVE") // "ACTIVE", "DELAYED", "CANCELLED"
+  vehicles    TransportVehicle[]
+  schedules   TransportSchedule[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TransportVehicle {
+  id          String   @id @default(cuid())
+  routeId     String
+  vehicleNum  String
+  capacity    Int
+  occupancy   Int      @default(0)
+  latitude    Float?
+  longitude   Float?
+  status      String   @default("ON_ROUTE") // "ON_ROUTE", "DELAYED", "SECURED_BY_POLICE", "MAINTENANCE"
+  route       TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  lastUpdated DateTime @default(now())
+}
+
+model TransportSchedule {
+  id          String   @id @default(cuid())
+  routeId     String
+  departure   DateTime
+  arrival     DateTime
+  route       TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+}
