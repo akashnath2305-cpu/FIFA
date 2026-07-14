@@ -2,8 +2,13 @@
  * @jest-environment node
  */
 import { createMocks } from 'node-mocks-http';
-import { POST } from '../app/api/auth/login/route';
 import { prismaMock } from '../lib/singleton';
+import { POST } from '../app/api/auth/login/route';
+
+// Explicitly mock prisma here so Jest hoists it before route.ts imports it
+jest.mock('../lib/prisma', () => ({
+  prisma: require('../lib/singleton').prismaMock
+}));
 
 // Mock the auth lib because 'jose' is an ESM module that breaks Jest compilation
 jest.mock('../lib/auth.ts', () => ({
