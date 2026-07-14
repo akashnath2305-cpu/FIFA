@@ -174,8 +174,8 @@ export default function TicketPage() {
     const corner = layout.corners.find(c => c.id === (interactiveSection || targetSection));
     if (corner) {
        const pts = corner.points.split(' ').map(p => p.split(',').map(Number));
-       let cx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
-       let cy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
+       const cx = pts.reduce((sum, p) => sum + p[0], 0) / pts.length;
+       const cy = pts.reduce((sum, p) => sum + p[1], 0) / pts.length;
        return { cx, cy, transform: corner.transform };
     }
     return null;
