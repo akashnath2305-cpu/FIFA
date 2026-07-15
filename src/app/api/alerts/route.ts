@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const role = searchParams.get("role");
 
     // Fetch alerts where targetRole is null (broadcast to all) OR matches the user's role
-    const alerts = await prisma.alert.findMany({
+    const alertsPromise = prisma.alert.findMany({
       where: {
         OR: [
           { targetRole: null },
@@ -19,6 +19,13 @@ export async function GET(request: Request) {
       },
       take: 50 // Limit to 50 latest alerts
     });
+
+    // Fast-fail timeout: if Neon DB takes longer than 2.5 seconds to wake up, fall back to demo data immediately
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Database connection timed out (Neon DB might be asleep)")), 2500)
+    );
+
+    const alerts = await Promise.race([alertsPromise, timeoutPromise]);
 
     return NextResponse.json(alerts);
   } catch (error) {
